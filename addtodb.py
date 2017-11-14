@@ -7,7 +7,8 @@ import sqlite3
 
 db_connection = sqlite3.connect('events.db')
 db_cursor = db_connection.cursor()
-db_cursor.execute('''CREATE TABLE IF NOT EXISTS events (
+db_cursor.execute('''DROP TABLE IF EXISTS events''')
+db_cursor.execute('''CREATE TABLE events (
 serial int NOT NULL PRIMARY KEY,
 eventdate date,
 name varchar,

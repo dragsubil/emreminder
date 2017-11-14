@@ -10,6 +10,7 @@ import random
 from email.mime.text import MIMEText
 
 
+# Some Helper functions
 
 def random_string():
     '''returns a random 8 char string from the seed'''
@@ -22,12 +23,12 @@ def create_random_table(cursor):
     for each day. Year 2013 is used.
     '''
     cursor.execute('''CREATE TABLE events (
-serial int NOT NULL PRIMARY KEY,
-eventdate date,
-name varchar,
-event varchar,
-priority int)
-''')
+                      serial int NOT NULL PRIMARY KEY,
+                      eventdate date,
+                      name varchar,
+                      event varchar,
+                      priority int)
+                   ''')
     adate = datetime.date(2013, 1, 1)
     day_inc = datetime.timedelta(1)
     for serial in range(1, 366):
@@ -78,7 +79,7 @@ def check_test_db():
     conn.commit()
     conn.close()
 
-
+# Test code starts here (Thanks captain obvious!)
 class EventClassTests(unittest.TestCase):
     def setUp(self):
         check_test_db()
@@ -122,7 +123,11 @@ class EventClassTests(unittest.TestCase):
 
 class EmailAndMsgModulesTests(unittest.TestCase):
     def setUp(self):
+        check_test_db()
         self.test_instance = reminder.Event('tests.db')
+        self.today_events = self.test_instance.today()
+        self.tomorrow_events = self.test_instance.tomorrow()
+        self.next_week_events = self.test_instance.next_week()
 
     def test_insert_events_into_msg(self):
         test_msg = "The sample events are:"
@@ -136,22 +141,33 @@ class EmailAndMsgModulesTests(unittest.TestCase):
         print("msg formatting: \n" + test_msg)
 
     def test_prepare_message(self):
-        today_events = self.test_instance.today()
-        tomorrow_events = self.test_instance.tomorrow()
-        next_week_events = self.test_instance.next_week()
-        full_msg = reminder.prepare_message(today_events,
-                                            tomorrow_events,
-                                            next_week_events)
+        full_msg = reminder.prepare_message(self.today_events,
+                                                 self.tomorrow_events,
+                                                 self.next_week_events)
         self.assertIsInstance(full_msg, str)
-        print(full_msg)
+        print(self.full_msg)
 
     def test_prepare_email(self):
-        email_msg_object = reminder.prepare_email(TO, FROM, 
-        pass
+        full_msg = reminder.prepare_message(self.today_events,
+                                                 self.tomorrow_events,
+                                                 self.next_week_events)
+        msgobj = reminder.prepare_email(full_msg)
+        self.assertIsInstance(msgobj, MIMEText)
+        self.assertEqual(msgobj['From'], reminder.send_user)
+        self.assertEqual(msgobj['To'], reminder.to_address)
 
     def test_sendemail(self):
+        # probably needs a mock. but eh ¯\_(ツ)_/¯
+        # The following crap can't be used for testing offline.
+        # It was just to verify that it was working.
+        # Don't bother unit testing this without a mock for the mail server.
+        # full_msg = reminder.prepare_message(self.today_events,
+        #                                          self.tomorrow_events,
+        #                                          self.next_week_events)
+        # msgobj = reminder.prepare_email(full_msg)
+        # testoutput = reminder.sendemail(msgobj)
+        # print(testoutput)
         pass
-
 
 if __name__ == "__main__":
     unittest.main()

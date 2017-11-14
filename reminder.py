@@ -4,15 +4,19 @@ from email.mime.text import MIMEText
 import os
 import smtplib
 import sqlite3
+import config
+import logging
 
-# TODO: add logging
-send_user = os.environ.get('SEND_USER')
-send_pwd = os.environ.get('SEND_PWD')
-to_address = os.environ.get('TO_USER')
-
+send_user = config.send_user
+send_pwd = config.send_pwd
+to_address = config.to_address
+logging.basicConfig(format='%(asctime)s %(message)s',
+                    filename='our.log', level=logging.DEBUG)
 
 class Event:
-    def __init__(self, db='events.db'):
+    """Class for retrieving events from the database"""
+
+    def __init__(self, db=config.events_db_path):
         self.today_date = datetime.date.today()
         self.connect = sqlite3.connect(db)
         self.cursor = self.connect.cursor()
@@ -61,7 +65,7 @@ def prepare_message(today_events, tomorrow_events, next_week_events):
     today_date = datetime.date.today()
     tomorrow_date = today_date + datetime.timedelta(1)
     next_week_date = today_date + datetime.timedelta(7)
-    full_msg = ""
+    full_msg = "A reminder of the events:\n\n"
     if today_events:
         today_msg = "The following events are occuring today ({}):".format(today_date)
         full_msg += insert_events_into_msg(today_events, today_msg)
@@ -73,34 +77,39 @@ def prepare_message(today_events, tomorrow_events, next_week_events):
         full_msg += insert_events_into_msg(next_week_events, next_week_msg)
     return full_msg
 
-
-    
-    
-def prepare_email(eventlist):
-    message = "Today {} is the {} of {}. Send 'em a wish".format(
-        today, eventlist[2], eventlist[1])
+def prepare_email(message):
+    today_date = datetime.date.today()
     msgobj = MIMEText(message)
-    msgobj['Subject'] = 'Event Reminder for today ({})'.format(today)
+    msgobj['Subject'] = 'Event Reminders for today ({})'.format(today_date)
     msgobj['From'] = send_user
     msgobj['To'] = to_address
     return msgobj
 
 
-def sendemail(eventlist):
+def sendemail(msgobj):
     '''arg `eventlist` is a list of 3 strings of the form [<date>,<entity>,<event>,<priority>]
     which was sent from the csvcheck fn.'''
 
-    msgobj = prepare_email(eventlist)
     smtpserver = smtplib.SMTP("smtp.gmail.com", 587)
     smtpserver.ehlo()
     smtpserver.starttls()
-    print("Logging in now")
+    logging.info("Logging in now")
     smtpserver.login(send_user, send_pwd)
-    print("logged in to SMTP Server")
+    logging.info("logged in to SMTP Server")
     smtpserver.send_message(msgobj, send_user, to_address)
-    print("reminder sent. Logging out.")
+    logging.info("reminder sent. Logging out.")
     smtpserver.close()
 
+def run():
+    events_obj = Event(config.events_db_path)
+    today_events = events_obj.today()
+    tomorrow_events = events_obj.tomorrow()
+    next_week_events = events_obj.next_week()
+    full_msg = prepare_message(today_events,
+                               tomorrow_events,
+                               next_week_events)
+    msgobj = prepare_email(full_msg)
+    sendemail(msgobj)
 
 if __name__ == '__main__':
-    csvcheck('events.csv')
+    run()
