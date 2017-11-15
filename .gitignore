@@ -1,6 +1,6 @@
 *.db
 *.pyc
-*.csv
+events.csv
 *.env
 *~
 __pycache__
