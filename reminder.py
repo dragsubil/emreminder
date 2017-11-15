@@ -11,7 +11,7 @@ send_user = config.send_user
 send_pwd = config.send_pwd
 to_address = config.to_address
 logging.basicConfig(format='%(asctime)s %(message)s',
-                    filename='our.log', level=logging.DEBUG)
+                    filename='emreminderlogs.log', level=logging.DEBUG)
 
 class Event:
     """Class for retrieving events from the database"""
@@ -54,6 +54,10 @@ class Event:
 
 
 def insert_events_into_msg(events, msg):
+    """
+    the events list is in the format:
+    [(serial no, date string, person, event, priority)*]
+    """
     if events:
         for event in events:
             msg += "\n {} - {}".format(event[2], event[3])
@@ -105,6 +109,8 @@ def run():
     today_events = events_obj.today()
     tomorrow_events = events_obj.tomorrow()
     next_week_events = events_obj.next_week()
+    if today_events == [] and tomorrow_events == [] and next_week_events == []:
+        logging.info("No events to remind today. Exiting.")
     full_msg = prepare_message(today_events,
                                tomorrow_events,
                                next_week_events)
