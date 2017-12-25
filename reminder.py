@@ -111,11 +111,12 @@ def run():
     next_week_events = events_obj.next_week()
     if today_events == [] and tomorrow_events == [] and next_week_events == []:
         logging.info("No events to remind today. Exiting.")
-    full_msg = prepare_message(today_events,
-                               tomorrow_events,
-                               next_week_events)
-    msgobj = prepare_email(full_msg)
-    sendemail(msgobj)
+    else:
+        full_msg = prepare_message(today_events,
+                                tomorrow_events,
+                                next_week_events)
+        msgobj = prepare_email(full_msg)
+        sendemail(msgobj)
 
 if __name__ == '__main__':
     run()
